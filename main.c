@@ -25,6 +25,24 @@ int compare(const void *a, const void *b) {
   }
 }
 
+void saveFile(char *fileName, int *dataInMemory, int dataSize,
+              int changeFinalLine) {
+  int i;
+  FILE *manipulatedFile = fopen(fileName, "a");
+
+  for (i = 0; i < (dataSize - 1); i++) {
+    fprintf(manipulatedFile, "%d\n", dataInMemory[i]);
+  }
+
+  if (changeFinalLine == 0) {
+    fprintf(manipulatedFile, "%d", dataInMemory[dataSize - 1]);
+  } else {
+    fprintf(manipulatedFile, "%d\n", dataInMemory[dataSize - 1]);
+  }
+
+  fclose(manipulatedFile);
+}
+
 int createSortedFiles(char *fileName) {
   int dataInMemory[MemoryCapacityN], numberOfFilesCount = 0,
                                      totalDataInMemory = 0;
@@ -44,7 +62,8 @@ int createSortedFiles(char *fileName) {
       numberOfFilesCount++;
 
       sprintf(newFileName, "temp%d.txt", numberOfFilesCount);
-      qsort(dataInMemory, numberOfFilesCount, sizeof(int), compare);
+      qsort(dataInMemory, totalDataInMemory, sizeof(int), compare);
+      saveFile(newFileName, dataInMemory, totalDataInMemory, 0);
 
       totalDataInMemory = 0;
     }
@@ -53,7 +72,8 @@ int createSortedFiles(char *fileName) {
   if (totalDataInMemory > 0) {
     numberOfFilesCount++;
     sprintf(newFileName, "temp%d.txt", numberOfFilesCount);
-    qsort(dataInMemory, numberOfFilesCount, sizeof(int), compare);
+    qsort(dataInMemory, totalDataInMemory, sizeof(int), compare);
+    saveFile(newFileName, dataInMemory, totalDataInMemory, 0);
   }
 
   fclose(dataFile);
@@ -62,9 +82,15 @@ int createSortedFiles(char *fileName) {
 }
 
 void externalQuicksort() {
-  int numberOfFiles = createSortedFiles("sortedData");
+  char newFileName[20];
+  int numberOfFiles = createSortedFiles("sortedData"), i;
 
   printf("quantidade de arquivos criados: %d", numberOfFiles);
+
+  // for (i = 0; i < numberOfFiles; i++) {
+  //   sprintf(newFileName, "temp%d.txt", i + 1);
+  //   remove(newFileName);
+  // }
 }
 
 void handleSelectedMenuOption(int menuOptionNumber) {
