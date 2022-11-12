@@ -43,11 +43,17 @@ int createSortedFiles(char *fileName) {
     if (totalDataInMemory == MemoryCapacityN) {
       numberOfFilesCount++;
 
-      sprintf(newFileName, "temp%d", numberOfFilesCount);
+      sprintf(newFileName, "temp%d.txt", numberOfFilesCount);
       qsort(dataInMemory, numberOfFilesCount, sizeof(int), compare);
 
       totalDataInMemory = 0;
     }
+  }
+
+  if (totalDataInMemory > 0) {
+    numberOfFilesCount++;
+    sprintf(newFileName, "temp%d.txt", numberOfFilesCount);
+    qsort(dataInMemory, numberOfFilesCount, sizeof(int), compare);
   }
 
   fclose(dataFile);
