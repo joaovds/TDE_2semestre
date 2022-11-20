@@ -1,6 +1,7 @@
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef __unix__
 #include <stdlib.h>
@@ -11,18 +12,23 @@
 #include <windows.h>
 #endif
 
-#define MemoryCapacityN 100
+#define MemoryCapacityN 5
 
 struct FileStruct {
   FILE *file;
   int position, maxSize, *buffer;
 };
 
-int compare(const void *a, const void *b) {
-  if (*(int *)a == *(int *)b) {
+typedef struct {
+  char cityName[80];
+  int cases;
+} RowData;
+
+int compareByCases(RowData *a, RowData *b) {
+  if (a->cases == b->cases) {
     return 0;
   } else {
-    if (*(int *)a < *(int *)b) {
+    if (a->cases < b->cases) {
       return -1;
     } else {
       return 1;
@@ -30,44 +36,69 @@ int compare(const void *a, const void *b) {
   }
 }
 
-void saveFile(char *fileName, int *dataInMemory, int dataSize,
+void saveFile(char *fileName, RowData *dataInMemory, int dataSize,
               int changeFinalLine) {
   int i;
   FILE *manipulatedFile = fopen(fileName, "a");
 
   for (i = 0; i < (dataSize - 1); i++) {
-    fprintf(manipulatedFile, "%d\n", dataInMemory[i]);
+    fprintf(manipulatedFile, "%s %d\n", dataInMemory[i].cityName,
+            dataInMemory[i].cases);
   }
 
   if (changeFinalLine == 0) {
-    fprintf(manipulatedFile, "%d", dataInMemory[dataSize - 1]);
+    fprintf(manipulatedFile, "%s %d", dataInMemory[dataSize - 1].cityName,
+            dataInMemory[dataSize - 1].cases);
   } else {
-    fprintf(manipulatedFile, "%d\n", dataInMemory[dataSize - 1]);
+    fprintf(manipulatedFile, "%s %d\n", dataInMemory[dataSize - 1].cityName,
+            dataInMemory[dataSize - 1].cases);
   }
 
   fclose(manipulatedFile);
 }
 
+RowData getColumnContentsInRow(char *dataInMemory, int *columns,
+                               RowData rowsData) {
+  int i = 0, j = columns[0];
+  char *columnContent = strtok(strdup(dataInMemory), ";");
+
+  strcpy(rowsData.cityName, columnContent);
+  columnContent = strtok(NULL, ";");
+
+  rowsData.cases = atoi(columnContent);
+
+  i++;
+  j = columns[i];
+
+  return rowsData;
+}
+
 int createSortedFiles() {
-  int dataInMemory[MemoryCapacityN], numberOfFilesCount = 0,
-                                     totalDataInMemory = 0;
+  static RowData dataInMemory[MemoryCapacityN];
+  int numberOfFilesCount = 0, totalDataInMemory = 0;
   char newFileName[20];
   FILE *dataFile;
 
-  if ((dataFile = fopen("dadosDesordenados.txt", "r")) == NULL) {
+  if ((dataFile = fopen("databaseTeste.csv", "r")) == NULL) {
     printf("Erro ao abrir o arquivo");
     return -1;
   }
 
+  char rowContent[180];
+  int columns[] = {1, 2}, i = 0;
+
   while (!feof(dataFile)) {
-    fscanf(dataFile, "%d", &dataInMemory[totalDataInMemory]);
+    fgets(rowContent, 180, dataFile);
+
+    dataInMemory[totalDataInMemory] = getColumnContentsInRow(
+        rowContent, columns, dataInMemory[totalDataInMemory]);
     totalDataInMemory++;
 
     if (totalDataInMemory == MemoryCapacityN) {
       numberOfFilesCount++;
 
       sprintf(newFileName, "temp%d.txt", numberOfFilesCount);
-      qsort(dataInMemory, totalDataInMemory, sizeof(int), compare);
+      qsort(dataInMemory, totalDataInMemory, sizeof(RowData), compareByCases);
       saveFile(newFileName, dataInMemory, totalDataInMemory, 0);
 
       totalDataInMemory = 0;
@@ -77,7 +108,7 @@ int createSortedFiles() {
   if (totalDataInMemory > 0) {
     numberOfFilesCount++;
     sprintf(newFileName, "temp%d.txt", numberOfFilesCount);
-    qsort(dataInMemory, totalDataInMemory, sizeof(int), compare);
+    qsort(dataInMemory, totalDataInMemory, sizeof(RowData), compareByCases);
     saveFile(newFileName, dataInMemory, totalDataInMemory, 0);
   }
 
@@ -186,12 +217,12 @@ void externalQuicksort() {
   int numberOfFiles = createSortedFiles();
   int i, bufferSize = MemoryCapacityN / (numberOfFiles + 1);
 
-  mergeSortedFiles(numberOfFiles, bufferSize);
+  // mergeSortedFiles(numberOfFiles, bufferSize);
 
-  for (i = 0; i < numberOfFiles; i++) {
-    sprintf(newFileName, "temp%d.txt", i + 1);
-    remove(newFileName);
-  }
+  // for (i = 0; i < numberOfFiles; i++) {
+  //   sprintf(newFileName, "temp%d.txt", i + 1);
+  //   remove(newFileName);
+  // }
 }
 
 void handleSelectedMenuOption(int menuOptionNumber) {
