@@ -14,15 +14,16 @@
 
 #define MemoryCapacityN 5
 
-struct FileStruct {
-  FILE *file;
-  int position, maxSize, *buffer;
-};
-
 typedef struct {
   char cityName[80];
   int cases;
 } RowData;
+
+struct FileStruct {
+  FILE *file;
+  int position, maxSize;
+  RowData *buffer;
+};
 
 int compareByCases(RowData *a, RowData *b) {
   if (a->cases == b->cases) {
@@ -129,7 +130,7 @@ void insertDataInTheBuffer(struct FileStruct *file, int bufferSize) {
 
   for (i = 0; i < bufferSize; i++) {
     if (!feof(file->file)) {
-      fscanf(file->file, "%d", &file->buffer[file->maxSize]);
+      // fscanf(file->file, "%d", &file->buffer[file->maxSize].cases);
       file->maxSize++;
     } else {
       fclose(file->file);
@@ -140,7 +141,7 @@ void insertDataInTheBuffer(struct FileStruct *file, int bufferSize) {
 }
 
 int findLowerValue(struct FileStruct *file, int numberOfFiles, int bufferSize,
-                   int *lowerValue) {
+                   RowData *lowerValue) {
   int i, foundAValue = -1;
 
   for (i = 0; i < numberOfFiles; i++) {
@@ -148,8 +149,8 @@ int findLowerValue(struct FileStruct *file, int numberOfFiles, int bufferSize,
       if (foundAValue == -1) {
         foundAValue = i;
       } else {
-        if (file[i].buffer[file[i].position] <
-            file[foundAValue].buffer[file[foundAValue].position]) {
+        if (file[i].buffer[file[i].position].cases <
+            file[foundAValue].buffer[file[foundAValue].position].cases) {
           foundAValue = i;
         }
       }
@@ -174,7 +175,7 @@ int findLowerValue(struct FileStruct *file, int numberOfFiles, int bufferSize,
 void mergeSortedFiles(int numberOfFiles, int bufferSize) {
   char newFileName[20];
   int i;
-  int *buffer = (int *)malloc(bufferSize * sizeof(int));
+  RowData *buffer = (RowData *)malloc(bufferSize * sizeof(RowData));
 
   struct FileStruct *file;
 
@@ -185,11 +186,13 @@ void mergeSortedFiles(int numberOfFiles, int bufferSize) {
     file[i].file = fopen(newFileName, "r");
     file[i].position = 0;
     file[i].maxSize = 0;
-    file[i].buffer = (int *)malloc(bufferSize * sizeof(int));
+    file[i].buffer = (RowData *)malloc(bufferSize * sizeof(RowData));
+    printf("%s", file->buffer->cityName);
     insertDataInTheBuffer(&file[i], bufferSize);
   }
 
-  int lowerValue, numberOfBuffers = 0;
+  int numberOfBuffers = 0;
+  RowData lowerValue;
 
   while (findLowerValue(file, numberOfFiles, bufferSize, &lowerValue) == 1) {
     buffer[numberOfBuffers] = lowerValue;
@@ -217,12 +220,12 @@ void externalQuicksort() {
   int numberOfFiles = createSortedFiles();
   int i, bufferSize = MemoryCapacityN / (numberOfFiles + 1);
 
-  // mergeSortedFiles(numberOfFiles, bufferSize);
+  mergeSortedFiles(numberOfFiles, bufferSize);
 
-  // for (i = 0; i < numberOfFiles; i++) {
-  //   sprintf(newFileName, "temp%d.txt", i + 1);
-  //   remove(newFileName);
-  // }
+  for (i = 0; i < numberOfFiles; i++) {
+    sprintf(newFileName, "temp%d.txt", i + 1);
+    remove(newFileName);
+  }
 }
 
 void handleSelectedMenuOption(int menuOptionNumber) {
