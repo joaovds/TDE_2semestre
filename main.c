@@ -12,7 +12,7 @@
 #include <windows.h>
 #endif
 
-#define MemoryCapacityN 5
+#define MemoryCapacityN 100000
 
 typedef struct {
   char cityName[80];
@@ -43,15 +43,15 @@ void saveFile(char *fileName, RowData *dataInMemory, int dataSize,
   FILE *manipulatedFile = fopen(fileName, "a");
 
   for (i = 0; i < (dataSize - 1); i++) {
-    fprintf(manipulatedFile, "%s %d\n", dataInMemory[i].cityName,
+    fprintf(manipulatedFile, "%s;%d\n", dataInMemory[i].cityName,
             dataInMemory[i].cases);
   }
 
   if (changeFinalLine == 0) {
-    fprintf(manipulatedFile, "%s %d", dataInMemory[dataSize - 1].cityName,
+    fprintf(manipulatedFile, "%s;%d", dataInMemory[dataSize - 1].cityName,
             dataInMemory[dataSize - 1].cases);
   } else {
-    fprintf(manipulatedFile, "%s %d\n", dataInMemory[dataSize - 1].cityName,
+    fprintf(manipulatedFile, "%s;%d\n", dataInMemory[dataSize - 1].cityName,
             dataInMemory[dataSize - 1].cases);
   }
 
@@ -80,13 +80,13 @@ int createSortedFiles() {
   char newFileName[20];
   FILE *dataFile;
 
-  if ((dataFile = fopen("databaseTeste.csv", "r")) == NULL) {
+  if ((dataFile = fopen("municipios.csv", "r")) == NULL) {
     printf("Erro ao abrir o arquivo");
     return -1;
   }
 
   char rowContent[180];
-  int columns[] = {1, 2}, i = 0;
+  int columns[] = {1, 4}, i = 0;
 
   while (!feof(dataFile)) {
     fgets(rowContent, 180, dataFile);
@@ -98,7 +98,7 @@ int createSortedFiles() {
     if (totalDataInMemory == MemoryCapacityN) {
       numberOfFilesCount++;
 
-      sprintf(newFileName, "temp%d.txt", numberOfFilesCount);
+      sprintf(newFileName, "temp%d.csv", numberOfFilesCount);
       qsort(dataInMemory, totalDataInMemory, sizeof(RowData), compareByCases);
       saveFile(newFileName, dataInMemory, totalDataInMemory, 0);
 
@@ -108,7 +108,7 @@ int createSortedFiles() {
 
   if (totalDataInMemory > 0) {
     numberOfFilesCount++;
-    sprintf(newFileName, "temp%d.txt", numberOfFilesCount);
+    sprintf(newFileName, "temp%d.csv", numberOfFilesCount);
     qsort(dataInMemory, totalDataInMemory, sizeof(RowData), compareByCases);
     saveFile(newFileName, dataInMemory, totalDataInMemory, 0);
   }
@@ -120,6 +120,8 @@ int createSortedFiles() {
 
 void insertDataInTheBuffer(struct FileStruct *file, int bufferSize) {
   int i;
+  char rowContent[180];
+  int columns[] = {1, 4};
 
   if (file->file == NULL) {
     return;
@@ -182,12 +184,11 @@ void mergeSortedFiles(int numberOfFiles, int bufferSize) {
   file = (struct FileStruct *)malloc(numberOfFiles * sizeof(struct FileStruct));
 
   for (i = 0; i < numberOfFiles; i++) {
-    sprintf(newFileName, "temp%d.txt", i + 1);
+    sprintf(newFileName, "temp%d.csv", i + 1);
     file[i].file = fopen(newFileName, "r");
     file[i].position = 0;
     file[i].maxSize = 0;
     file[i].buffer = (RowData *)malloc(bufferSize * sizeof(RowData));
-    printf("%s", file->buffer->cityName);
     insertDataInTheBuffer(&file[i], bufferSize);
   }
 
@@ -207,12 +208,12 @@ void mergeSortedFiles(int numberOfFiles, int bufferSize) {
     saveFile(newFileName, buffer, numberOfBuffers, 1);
   }
 
-  for (i = 0; i < numberOfFiles; i++) {
-    free(file[i].buffer);
-  }
+  // for (i = 0; i < numberOfFiles; i++) {
+  //   free(file[i].buffer);
+  // }
 
-  free(file);
-  free(buffer);
+  // free(file);
+  // free(buffer);
 }
 
 void externalQuicksort() {
@@ -222,10 +223,10 @@ void externalQuicksort() {
 
   mergeSortedFiles(numberOfFiles, bufferSize);
 
-  for (i = 0; i < numberOfFiles; i++) {
-    sprintf(newFileName, "temp%d.txt", i + 1);
-    remove(newFileName);
-  }
+  // for (i = 0; i < numberOfFiles; i++) {
+  //   sprintf(newFileName, "temp%d.csv", i + 1);
+  //   remove(newFileName);
+  // }
 }
 
 void handleSelectedMenuOption(int menuOptionNumber) {
